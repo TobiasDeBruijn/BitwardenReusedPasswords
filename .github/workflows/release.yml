@@ -35,8 +35,8 @@ jobs:
       with:
         command: build
         args: --release
-      - name: Upload asset
-    - id: upload_asset
+    - name: Upload asset
+      id: upload_asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
