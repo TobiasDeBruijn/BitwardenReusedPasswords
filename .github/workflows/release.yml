@@ -47,7 +47,7 @@ jobs:
       with:
          upload_url: ${{ needs.create_release.outputs.upload_url }}
          asset_path: target/release/bitwarden_reused_passwords
-         asset_name: ${{ env.REPOSITORY_NAME }}
+         asset_name: ${{ env.REPOSITORY_NAME }}-x86_64-Linux
          asset_content_type: application/octet-stream
 
   build_x86_windows:
@@ -78,6 +78,5 @@ jobs:
       with:
          upload_url: ${{ needs.create_release.outputs.upload_url }}
          asset_path: target/x86_64-pc-windows-gnu/release/bitwarden_reused_passwords.exe
-         asset_name: ${{ env.REPOSITORY_NAME }}.exe
+         asset_name: ${{ env.REPOSITORY_NAME }}-x86_64-Windows.exe
          asset_content_type: application/octet-stream
-
