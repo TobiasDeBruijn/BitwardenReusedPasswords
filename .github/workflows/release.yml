@@ -41,7 +41,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-         upload_url: ${{ jobs.create_release.upload_url }}
+         upload_url: ${{ needs.create_release.upload_url }}
          asset_path: target/release/bitwarden_reused_passwords
          asset_name: ${{ env.REPOSITORY_NAME }}
          asset_content_type: application/octet-stream
@@ -70,7 +70,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-         upload_url: ${{ jobs.create_release.upload_url }}
+         upload_url: ${{ needs.create_release.upload_url }}
          asset_path: target/release/bitwarden_reused_passwords.exe
          asset_name: ${{ env.REPOSITORY_NAME }}
          asset_content_type: application/octet-stream
