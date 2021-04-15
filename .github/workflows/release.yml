@@ -1,0 +1,77 @@
+name: Release builds
+on:
+  push:
+    tags:
+      - '**'
+
+jobs:
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+    - upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+  build_x86_ubuntu:
+    name: Build x86 Ubuntu
+    runs-on: ubuntu-latest
+    needs: create_release
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release
+      - name: Upload asset
+    - id: upload_asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+         upload_url: ${{ jobs.create_release.upload_url }}
+         asset_path: target/release/bitwarden_reused_passwords
+         asset_name: ${{ env.REPOSITORY_NAME }}
+         asset_content_type: application/octet-stream
+
+  build_x86_windows:
+    name: Build x86 Windows
+    runs-on: ubuntu-latest
+    needs: create_release
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: stable-x86_64-pc-windows-gnu
+        override: true
+    - uses: actions-rs/cargo@v1
+      with:
+        use-cross: true
+        command: build
+        args: --target stable-x86_64-pc-windows-gnu --release
+    - name: Extract repository name
+      run: echo "REPOSITORY_NAME=$(echo "$GITHUB_REPOSITORY" | awk -F / '{print $2}' | sed -e "s/:refs//")" >> $GITHUB_ENV
+    - name: Upload asset
+      id: upload_asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+         upload_url: ${{ jobs.create_release.upload_url }}
+         asset_path: target/release/bitwarden_reused_passwords.exe
+         asset_name: ${{ env.REPOSITORY_NAME }}
+         asset_content_type: application/octet-stream
+
