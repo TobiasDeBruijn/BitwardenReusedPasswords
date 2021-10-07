@@ -46,7 +46,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
          upload_url: ${{ needs.create_release.outputs.upload_url }}
-         asset_path: target/release/bitwarden_reused_passwords
+         asset_path: target/release/bitwarden_checker
          asset_name: ${{ env.REPOSITORY_NAME }}-x86_64-Linux
          asset_content_type: application/octet-stream
 
@@ -77,6 +77,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
          upload_url: ${{ needs.create_release.outputs.upload_url }}
-         asset_path: target/x86_64-pc-windows-gnu/release/bitwarden_reused_passwords.exe
+         asset_path: target/x86_64-pc-windows-gnu/release/bitwarden_checker.exe
          asset_name: ${{ env.REPOSITORY_NAME }}-x86_64-Windows.exe
          asset_content_type: application/octet-stream
