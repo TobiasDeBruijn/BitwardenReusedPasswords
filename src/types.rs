@@ -7,7 +7,7 @@ pub struct ExportFile {
     pub items:      Vec<ExportItem>
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExportItem {
     pub id:                 String,
@@ -23,7 +23,7 @@ pub struct ExportItem {
     pub collection_ids:     Option<Vec<String>>
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 pub struct LoginItem {
     pub uris:       Option<Vec<LoginUri>>,
     pub username:   Option<String>,
@@ -31,7 +31,7 @@ pub struct LoginItem {
     pub totp:       Option<bool>
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 pub struct LoginUri {
     #[serde(rename(deserialize = "match"))]
     pub uri_match:      Option<i64>,

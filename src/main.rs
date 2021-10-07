@@ -1,62 +1,137 @@
-use crate::parser::parse_file;
+use std::collections::HashMap;
+use std::hash::Hash;
+use std::path::Path;
+use clap::{App, Arg};
+use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use std::io::Write;
 
 mod types;
 mod parser;
 
+pub struct Config {
+    password:   bool,
+    username:   bool
+}
+
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    if args.len() == 1 {
-        eprintln!("You need to provide arguments. Use --help to see possible arguments.");
-        std::process::exit(1);
-    }
+    let matches = app().get_matches();
+    let input_file = matches.value_of("input").expect("Missing required value 'input'");
 
-    let mut _valid_arg_given = false;
+    let config = Config {
+        password: matches.is_present("check-password"),
+        username: matches.is_present("check-username"),
+    };
 
-    if args.contains(&"--help".to_string()) {
-        _valid_arg_given = true;
-
-        println!("Available commands: \n\
-        \t --help: \t\t\tDisplay available commands\n\
-        \t --from <path>: \t\tParse a BitWarden export from the provided path");
-
-        std::process::exit(0);
-    }
-
-    if args.contains(&"--from".to_string()) {
-        _valid_arg_given = true;
-
-        let from_path_option = get_argument_value(&args, "--from");
-        if from_path_option.is_none() {
-            eprintln!("'--from' requires a value to be given!");
+    let result = match parser::parse_file(Path::new(input_file), &config) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("Parsing failed: {:?}", e);
             std::process::exit(1);
         }
+    };
 
-        let from_path = from_path_option.unwrap();
-        println!("Reading from '{}'", from_path);
+    let duplicate_usernames: Vec<_> = result.clone().into_iter()
+        .filter(|f| f.username.is_some())
+        .map(|f| (f.name, f.username.expect("Cannot be None")))
+        .map(|(name, username)| (username, name))
 
-        parse_file(std::path::Path::new(&from_path));
+        .collect();
+    let usernames = mapify(duplicate_usernames);
+
+    let duplicate_passwords: Vec<_> = result.into_iter()
+        .filter(|f| f.password.is_some())
+        .map(|f| (f.name, f.password.expect("Cannot be None")))
+        .map(|(name, password)| (password, name))
+        .collect();
+    let passwords = mapify(duplicate_passwords);
+
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    let mut green = ColorSpec::new();
+    green.set_fg(Some(Color::Green));
+    let mut red = ColorSpec::new();
+    red.set_fg(Some(Color::Red));
+    let mut white = ColorSpec::new();
+    white.set_fg(Some(Color::White));
+    let mut yellow = ColorSpec::new();
+    yellow.set_fg(Some(Color::Yellow));
+
+    if !usernames.is_empty() {
+        let _ = stdout.set_color(&red);
+        let _ = writeln!(&mut stdout, "You have duplicate usernames:\n");
+
+        for (username, names) in usernames {
+            let _ = stdout.set_color(&green);
+            let _ = write!(&mut stdout, "- Username '");
+            let _ = stdout.set_color(&yellow);
+            let _ = write!(&mut stdout, "{}", username);
+            let _ = stdout.set_color(&green);
+            let _ = writeln!(&mut stdout, "' is used at: ");
+            let _ = stdout.set_color(&white);
+
+            for name in names {
+                let _ = writeln!(&mut stdout, "\t- {}", name);
+            }
+        }
     }
 
-    if !_valid_arg_given {
-        eprintln!("Invalid argument given. Run with '--help' for a list of available commands.");
-        std::process::exit(1);
+    if !passwords.is_empty() {
+        let _ = stdout.set_color(&red);
+        let _ = writeln!(&mut stdout, "\nYou have duplicate passwords: \n");
+
+        for (password, names) in passwords {
+            let _ = stdout.set_color(&green);
+            let _ = write!(&mut stdout, "- Password '");
+            let _ = stdout.set_color(&yellow);
+            let _ = write!(&mut stdout, "{}", password);
+            let _ = stdout.set_color(&green);
+            let _ = writeln!(&mut stdout, "' is used at: ");
+            let _ = stdout.set_color(&white);
+
+            for name in names {
+                let _ = writeln!(&mut stdout, "\t- {}", name);
+            }
+        }
     }
 }
 
-fn get_argument_value(args: &Vec<String>, arg_name: &str) -> Option<String> {
-    for i in 0..args.len() {
-        if args.get(i).unwrap().eq(&arg_name.to_string()) {
-            if i + 1 > args.len() {
-                return None;
+fn mapify<K: Hash + Eq, V: Hash>(vec: Vec<(K, V)>) -> HashMap<K, Vec<V>> {
+    let mut result: HashMap<K, Vec<V>> = HashMap::new();
+    for (k, v) in vec {
+        match result.remove(&k) {
+            Some(mut ev) => {
+                ev.push(v);
+                result.insert(k, ev);
+            },
+            None => {
+                result.insert(k, vec![v]);
             }
-            let val = args.get(i+1);
-            if val.is_none() {
-                return None;
-            }
-
-            return Some(val.unwrap().clone());
         }
     }
 
-    return None;
+    result
+}
+
+fn app() -> App<'static, 'static> {
+    App::new(env!("CARGO_PKG_NAME"))
+        .version(env!("CARGO_PKG_VERSION"))
+        .author(env!("CARGO_PKG_AUTHORS"))
+        .arg(Arg::with_name("input")
+            .required(true)
+            .takes_value(true)
+            .value_name("input path")
+            .long("input")
+            .short("i")
+            .help("Path to your unencrypted BitWarden export"))
+        .arg(Arg::with_name("check-password")
+            .required(false)
+            .takes_value(false)
+            .long("check-password")
+            .short("p")
+            .help("Check for duplicate passwords"))
+        .arg(Arg::with_name("check-username")
+            .required(false)
+            .takes_value(false)
+            .long("check-username")
+            .short("u")
+            .help("Check for duplicate usernames/E-Mail addresses"))
 }
