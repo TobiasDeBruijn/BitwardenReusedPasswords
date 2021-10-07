@@ -1,10 +1,8 @@
 [package]
-name = "bitwarden_reused_passwords"
-version = "0.1.0"
-authors = ["Tobias de Bruijn"]
+name = "bitwarden_checker"
+version = "0.2.0"
+authors = ["Tobias de Bruijn <t.debruijn@array21.dev>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 serde_json = "1.0.68"
@@ -17,6 +15,5 @@ version = "1.0.130"
 features = ["derive"]
 
 [profile.release]
-overflow-checks = true
 lto = true
 panic = "abort"
